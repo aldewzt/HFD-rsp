@@ -3,19 +3,19 @@
 # Copyright (c) 2026 Zachary Aldewereld
 # SPDX-License-Identifier: MIT
 #
-# This file provides respiratory (RSP) signal processing and quality assessment utilities.
+# Respiratory (RSP) signal processing and quality assessment utilities.
 #
-# Attribution / provenance:
-# - The epoch-based processing workflow in `rsp_processing()` calls NeuroKit2's `nk.rsp_process()`.
-# - This module also includes an adapted/customized wrapper around the NeuroKit2-style RSP
-#   processing API to support interoperability with `rsp_quality_tree()` and
-#   `rsp_quality_charlton()`.
-# - NeuroKit2 is MIT-licensed. See NOTICE for third-party attribution and license details.
+# Dependencies / attribution:
+# - This module uses NeuroKit2 (imported as `neurokit2` / `nk`) and calls `nk.rsp_process()`
+#   for respiratory signal processing.
+# - `rsp_quality_charlton()` implements the impedance pneumography signal quality index
+#   described by Charlton et al. (2021) (original work published with a MATLAB implementation).
+#   Please cite: Charlton PH, Bonnici T, Tarassenko L, Clifton DA, Beale R, Watkinson PJ,
+#   Alastruey J. "An impedance pneumography signal quality index: Design, assessment and
+#   application to respiratory rate monitoring." Biomed Signal Process Control. 2021;65:102339.
+#   doi:10.1016/j.bspc.2020.102339
 #
-# References:
-# - Makowski, D., et al. NeuroKit2 (MIT license). https://github.com/neuropsychology/NeuroKit
-# - Charlton et al. (original MATLAB implementation described in the associated publication;
-#   this repository contains a Python re-implementation in `rsp_quality_charlton()`).
+# NeuroKit2 project: https://github.com/neuropsychology/NeuroKit (MIT licensed)
 
 """
 Respiratory signal processing and quality assessment functions based on NeuroKit2.
