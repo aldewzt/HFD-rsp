@@ -1,3 +1,22 @@
+# rsp.py
+#
+# Copyright (c) 2026 Zachary Aldewereld
+# SPDX-License-Identifier: MIT
+#
+# This file provides respiratory (RSP) signal processing and quality assessment utilities.
+#
+# Attribution / provenance:
+# - The epoch-based processing workflow in `rsp_processing()` calls NeuroKit2's `nk.rsp_process()`.
+# - This module also includes an adapted/customized wrapper around the NeuroKit2-style RSP
+#   processing API to support interoperability with `rsp_quality_tree()` and
+#   `rsp_quality_charlton()`.
+# - NeuroKit2 is MIT-licensed. See NOTICE for third-party attribution and license details.
+#
+# References:
+# - Makowski, D., et al. NeuroKit2 (MIT license). https://github.com/neuropsychology/NeuroKit
+# - Charlton et al. (original MATLAB implementation described in the associated publication;
+#   this repository contains a Python re-implementation in `rsp_quality_charlton()`).
+
 """
 Respiratory signal processing and quality assessment functions based on NeuroKit2.
 """
