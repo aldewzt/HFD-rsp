@@ -1,0 +1,32 @@
+NOTICE
+
+This repository distributes the file `rsp.py`, Copyright (c) 2026 Zachary Aldewereld,
+licensed under the MIT License (see LICENSE).
+
+Dependencies and attribution (not included in this repository)
+--------------------------------------------------------------
+`rsp.py` depends on the following third-party Python packages at runtime:
+
+- NeuroKit2 (https://github.com/neuropsychology/NeuroKit), used via its public API
+  (e.g., `nk.rsp_process()`). NeuroKit2 is MIT-licensed.
+- NumPy
+- pandas
+- SciPy
+
+No third-party source code is included or redistributed in this repository; the packages
+above are used as external dependencies.
+
+Charlton et al. (2021)
+----------------------
+`rsp_quality_charlton()` implements the impedance pneumography signal quality index
+described in:
+
+Charlton PH, Bonnici T, Tarassenko L, Clifton DA, Beale R, Watkinson PJ, Alastruey J.
+An impedance pneumography signal quality index: Design, assessment and application to
+respiratory rate monitoring. Biomed Signal Process Control. 2021;65:102339.
+doi:10.1016/j.bspc.2020.102339. PMID: 34168684. PMCID: PMC7611038.
+
+No endorsement
+--------------
+The above third-party projects and authors are not affiliated with, and do not endorse,
+this repository or its authors.
