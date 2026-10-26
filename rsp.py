@@ -21,6 +21,7 @@
 Respiratory signal processing and quality assessment functions based on NeuroKit2.
 """
 
+import inspect
 import pandas as pd
 import numpy as np
 import neurokit2 as nk
@@ -51,8 +52,9 @@ def rsp_processing(rsp_signal, epoch_min=1, sampling_rate=60, method='khodadad20
     method : str, optional
         Method for RSP processing. Default is 'khodadad2018'.
     quality_function : callable, optional
-        Function to compute quality metrics. Should accept (signals, info, sampling_rate) and return a single boolean value for the epoch.
-        For example: rsp_signal_quality
+        Function to compute quality metrics. Should accept (signals, info, sampling_rate, **quality_kwargs) and return
+        'acceptable'/'unacceptable' (or a boolean) for the epoch, or a dict of metrics when called with detailed=True.
+        For example: rsp_quality_tree or rsp_quality_charlton
     padding_sec : float, optional
         Number of seconds to pad before and after each epoch. Default is 5.
     **quality_kwargs : dict, optional
@@ -80,6 +82,14 @@ def rsp_processing(rsp_signal, epoch_min=1, sampling_rate=60, method='khodadad20
     all_quality : pd.DataFrame, optional
         DataFrame containing detailed quality metrics for each epoch if quality_function provided AND quality_kwargs specifies detailed=True
     '''
+    # Positional array so slices don't align on a pandas index
+    rsp_signal = np.asarray(rsp_signal)
+    detailed = quality_kwargs.get('detailed', False) == True
+
+    # Fail fast on unexpected quality_kwargs (otherwise every epoch fails inside the try below)
+    if quality_function is not None:
+        inspect.signature(quality_function).bind(None, None, sampling_rate=sampling_rate, **quality_kwargs)
+
     # Divide signal into epochs
     signal_length = len(rsp_signal)
     epoch_length = int(epoch_min * 60 * sampling_rate)  # minutes converted to samples
@@ -164,9 +174,13 @@ def rsp_processing(rsp_signal, epoch_min=1, sampling_rate=60, method='khodadad20
                     acceptability = np.concatenate([acceptability, epoch_accept]) if acceptability.size else epoch_accept
             except Exception as e:
                 print(f"Quality assessment failed for epoch {i+1}: {e}")
-                # Append default unacceptable quality so acceptability stays aligned with signals
-                epoch_accept = np.repeat(False, epoch_length)
-                acceptability = np.concatenate([acceptability, epoch_accept]) if acceptability.size else epoch_accept
+                if detailed:
+                    # Placeholder row (other metrics NaN) so all_quality stays aligned with epochs
+                    all_quality = pd.concat([all_quality, pd.DataFrame([{'classification': 'unacceptable'}])], ignore_index=True)
+                else:
+                    # Append default unacceptable quality so acceptability stays aligned with signals
+                    epoch_accept = np.repeat(False, epoch_length)
+                    acceptability = np.concatenate([acceptability, epoch_accept]) if acceptability.size else epoch_accept
 
         # Store results
         all_signals.append(epoch_signals)
@@ -197,7 +211,7 @@ def rsp_processing(rsp_signal, epoch_min=1, sampling_rate=60, method='khodadad20
     # Return with quality information if computed
     if quality_function is None:
         return signals, info
-    elif 'detailed' in quality_kwargs and quality_kwargs['detailed'] == True:
+    elif detailed:
         return signals, info, all_quality
     else:
         signals['Acceptable'] = acceptability
@@ -378,7 +392,7 @@ def rsp_quality_charlton(epoch_signals, epoch_info, sampling_rate=60, detailed=F
     epoch_signals : pd.DataFrame
         NeuroKit2 signals DataFrame for this epoch. Must contain 'RSP_Clean'.
     epoch_info : dict
-        Must contain 'RSP_Peaks' and 'RSP_Troughs' as arrays of sample indices
+        Must contain 'RSP_Peaks' as array of sample indices
         (0-indexed within the epoch).
     sampling_rate : int
         Sampling rate in Hz.
@@ -430,6 +444,12 @@ def rsp_quality_charlton(epoch_signals, epoch_info, sampling_rate=60, detailed=F
     rr = int(np.floor(np.mean(np.diff(rel_peaks))))  # mean interval in samples
     half_rr = int(np.floor(rr / 2))
 
+    # Degenerate template width (mean interval < 2 samples)
+    if half_rr < 1:
+        if detailed:
+            return features
+        return 'unacceptable'
+
     j = np.where(rel_peaks > half_rr)[0]
     l = np.where(rel_peaks + half_rr < len(signal))[0]
 
@@ -460,10 +480,14 @@ def rsp_quality_charlton(epoch_signals, epoch_info, sampling_rate=60, detailed=F
         pearsonr(avtempl, ts[k])[0] if not np.any(np.isnan(avtempl)) else np.nan
         for k in range(ts.shape[0])
     ])
-    R2 = float(np.nanmean(r2))
+    R2 = float(np.mean(r2))  # NaN propagates, as in MATLAB mean()
 
     # --- Coefficient of variation of cycle durations ---
-    R2min = float(np.std(valid_cycle_durations) / np.mean(valid_cycle_durations))
+    # ddof=1 to match MATLAB's sample standard deviation (std of a single value is 0)
+    if len(valid_cycle_durations) > 1:
+        R2min = float(np.std(valid_cycle_durations, ddof=1) / np.mean(valid_cycle_durations))
+    else:
+        R2min = 0.0
 
     # --- Flag abnormal breath durations ---
     median_dur = np.median(valid_cycle_durations)
